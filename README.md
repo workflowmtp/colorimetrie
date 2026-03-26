@@ -32,10 +32,12 @@ Dans Vercel Dashboard → Settings → Environment Variables, ajoutez ces variab
 
 ```bash
 # Base de données (OBLIGATOIRE)
-DATABASE_URL=postgresql://user:password@host:port/database?schema=public
+# Pour Vercel Postgres: utilisez l'URL fournie par Vercel (commence par prisma://)
+# Pour base externe: utilisez postgresql://
+DATABASE_URL=prisma://user:password@host:port/database?schema=public
 
 # Authentification (TRÈS IMPORTANT)
-NEXTAUTH_URL=https://your-domain.vercel.app
+NEXTAUTH_URL=https://colorimetrie.vercel.app
 NEXTAUTH_SECRET=votre-secret-32-caractères-minimum-généré-avec-openssl
 
 # Agent IA (optionnel - choisissez l'une des deux options)
@@ -63,12 +65,15 @@ NEXT_PUBLIC_CURRENCY=FCFA
 **Option A: Vercel Postgres (recommandé)**
 1. Dans Vercel Dashboard → Storage → Create Database
 2. Choisissez PostgreSQL
-3. Copiez le `DATABASE_URL` généré
-4. Ajoutez-le aux variables d'environnement
+3. **IMPORTANT**: L'URL générée commencera par `prisma://` (pas `postgresql://`)
+4. Copiez le `DATABASE_URL` généré
+5. Ajoutez-le aux variables d'environnement
+
+**Note**: Vercel Postgres utilise le protocole `prisma://` qui est spécifique à Vercel. N'utilisez pas `postgresql://`.
 
 **Option B: Base externe**
 1. Assurez-vous que votre base est accessible
-2. Configurez le `DATABASE_URL` manuellement
+2. Configurez le `DATABASE_URL` manuellement avec `postgresql://`
 
 #### 5. Déploiement initial
 Cliquez "Deploy" sur Vercel. Le build devrait prendre 2-3 minutes.
