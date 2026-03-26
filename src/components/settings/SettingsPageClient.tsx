@@ -94,7 +94,7 @@ function SettingsSection({ title, count, editable, items, columns, labels, apiPa
   }
 
   return (
-    <Accordion title={`${title} (${count})`}>
+    <Accordion id={`${type.toLowerCase()}-section`} title={`${title} (${count})`}>
       <div className="p-4">
         {editable && (
           <div className="mb-3">
@@ -160,7 +160,7 @@ function SettingsMachines({ machines, editable, onRefresh, toast }: any) {
   }
 
   return (
-    <Accordion title={`Machines (${machines.length})`}>
+    <Accordion id="machines-section" title={`Machines (${machines.length})`}>
       <div className="p-4">
         {editable && <div className="mb-3"><Button size="sm" onClick={() => setEditing({})}>+ Ajouter</Button></div>}
 
@@ -234,7 +234,7 @@ function SettingsStandards({ standards, editable, onRefresh, toast }: any) {
   }
 
   return (
-    <Accordion title={`Standards (${standards.length})`}>
+    <Accordion id="standards-section" title={`Standards (${standards.length})`}>
       <div className="p-4">
         {editable && <div className="mb-3"><Button size="sm" onClick={() => setEditing({})}>+ Ajouter</Button></div>}
 
@@ -322,7 +322,7 @@ function SettingsTolerances({ tolerances, editable, onRefresh, toast }: any) {
   }
 
   return (
-    <Accordion title={`Tolerances (${tolerances.length})`}>
+    <Accordion id="tolerances-section" title={`Tolerances (${tolerances.length})`}>
       <div className="p-4">
         {editable && <div className="mb-3"><Button size="sm" onClick={() => setEditing({})}>+ Ajouter</Button></div>}
 
