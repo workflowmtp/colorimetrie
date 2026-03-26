@@ -1,0 +1,9 @@
+lance cette application 
+
+1- enleve les utilisateurs demo sur la page de login 
+2- cree la page d inscription
+3- connecte l application a une bd posgresql et utilise les parametres tel que db_name, db_url, db_host,
+4- ajoute les roles et permissions dans l application
+5- sache que une permission est unne fonctionnalite de l application et un utilisateur peut avoir la permissions d attribuer d autres permissions a des utilisateurs 
+6- sache que l agent est connecter a n8n ppar webhook et utilise le basic auth  user=multiprint et password=Admin@1234
+

@@ -1,0 +1,694 @@
+// ================================================================
+// COLORLAB PRO — PRISMA SCHEMA
+// Stack: Next.js 15 + TypeScript + PostgreSQL + NextAuth
+// 30 modeles, 10 enums, relations completes
+// MULTIPRINT S.A. — Douala, Cameroun
+// ================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ================================================================
+// ENUMS
+// ================================================================
+
+enum Role {
+  admin
+  resp_labo
+  tech_labo
+  conducteur
+  resp_qc
+  direction
+}
+
+enum ProjectStatus {
+  brouillon
+  en_essai
+  en_analyse
+  a_valider
+  valide
+  valide_reserve
+  rejete
+  archive
+}
+
+enum Priority {
+  normale
+  haute
+  urgente
+}
+
+enum ProcessType {
+  offset_papier
+  heliogravure
+  offset_metal
+}
+
+enum SupportType {
+  papier_couche
+  papier_non_couche
+  carton
+  carton_couche
+  carton_metallise
+  pet
+  bopp
+  cpp
+  papier_helio
+  aluminium
+  complexe
+  etp
+  tfs
+}
+
+enum TrialStatus {
+  en_cours
+  mesure
+  analyse
+  a_corriger
+  candidat_validation
+  rejete
+  valide
+}
+
+enum ColorType {
+  Pantone
+  CMJN
+  Client
+  RAL
+  Interne
+}
+
+enum MeasureContext {
+  essai
+  avant_cuisson
+  apres_cuisson
+  production
+  controle_final
+}
+
+enum ValidationDecision {
+  valide
+  valide_reserve
+  rejete
+}
+
+enum ProductionStep {
+  debut
+  milieu
+  fin
+}
+
+// ================================================================
+// 1. USERS & AUTH
+// ================================================================
+
+model User {
+  id            String   @id @default(cuid())
+  nom           String
+  email         String   @unique
+  login         String   @unique
+  passwordHash  String   @default("")
+  role          Role     @default(tech_labo)
+  actif         Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations — responsable de dossiers
+  projectsResponsable   ColorProject[]       @relation("ProjectResponsable")
+  projectsCreatedBy     ColorProject[]       @relation("ProjectCreatedBy")
+
+  // Relations — operateur de couleurs/postes
+  colorOperations       ProjectColor[]       @relation("ColorOperator")
+
+  // Relations — essais
+  trials                ColorTrial[]
+
+  // Relations — mesures
+  spectroMeasurements   SpectroMeasurement[] @relation("SpectroOperator")
+  densitoMeasurements   DensitoMeasurement[] @relation("DensitoOperator")
+
+  // Relations — validations
+  validations           Validation[]
+
+  // Relations — production
+  productionControls    ProductionControl[]
+
+  // Relations — four
+  ovenRecords           OvenData[]
+
+  // Relations — permissions
+  userPermissions       UserPermission[]
+  grantedPermissions    UserPermission[]     @relation("PermissionGranter")
+
+  // NextAuth
+  accounts              Account[]
+  sessions              Session[]
+
+  @@map("users")
+}
+
+// NextAuth models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// ================================================================
+// 2. CLIENTS & PRODUITS
+// ================================================================
+
+model Client {
+  id        String   @id @default(cuid())
+  nom       String
+  code      String   @unique
+  secteur   String   @default("")
+  contact   String   @default("")
+  email     String   @default("")
+  telephone String   @default("")
+  actif     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products  Product[]
+  projects  ColorProject[]
+
+  @@map("clients")
+}
+
+model Product {
+  id               String   @id @default(cuid())
+  clientId         String
+  referenceClient  String   @default("")
+  designation      String
+  familleProduit   String   @default("")
+  description      String   @default("")
+  actif            Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  client           Client         @relation(fields: [clientId], references: [id])
+  projects         ColorProject[]
+
+  @@map("products")
+}
+
+// ================================================================
+// 3. MACHINES & PARAMETRAGE
+// ================================================================
+
+model Machine {
+  id           String      @id @default(cuid())
+  nomMachine   String
+  typeProcede  ProcessType
+  atelier      String      @default("")
+  actif        Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  projects     ColorProject[]
+
+  @@map("machines")
+}
+
+model Tolerance {
+  id           String      @id @default(cuid())
+  processId    ProcessType
+  supportType  String      @default("")
+  deltaEMax    Float       @default(3.0)
+  tolL         Float       @default(2.0)
+  tolA         Float       @default(1.5)
+  tolB         Float       @default(1.5)
+  tolDensite   Float       @default(0.10)
+  tolTrapping  Float       @default(70)
+  tolContraste Float       @default(25)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@map("tolerances")
+}
+
+model Standard {
+  id           String      @id @default(cuid())
+  nom          String
+  processId    ProcessType
+  supportType  String      @default("")
+  description  String      @default("")
+  actif        Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@map("standards")
+}
+
+// ================================================================
+// 4. DOSSIERS COULEUR (coeur metier)
+// ================================================================
+
+model ColorProject {
+  id                String        @id @default(cuid())
+  codeDossier       String        @unique
+  clientId          String
+  productId         String?
+  processId         ProcessType
+  machineId         String?
+  supportId         SupportType?
+  statut            ProjectStatus @default(brouillon)
+  cibleDescription  String        @default("")
+  priorite          Priority      @default(normale)
+  responsableId     String?
+  creeParId         String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  client            Client            @relation(fields: [clientId], references: [id])
+  product           Product?          @relation(fields: [productId], references: [id])
+  machine           Machine?          @relation(fields: [machineId], references: [id])
+  responsable       User?             @relation("ProjectResponsable", fields: [responsableId], references: [id])
+  creePar           User?             @relation("ProjectCreatedBy", fields: [creeParId], references: [id])
+
+  // Enfants
+  colors            ProjectColor[]
+  trials            ColorTrial[]
+  formulations      Formulation[]
+  validations       Validation[]
+  productionControls ProductionControl[]
+  metalSupportData  MetalSupportData?
+  whiteLacquerData  WhiteLacquerData?
+
+  @@index([clientId])
+  @@index([statut])
+  @@index([processId])
+  @@index([priorite])
+  @@map("color_projects")
+}
+
+// ================================================================
+// 5. COULEURS PAR DOSSIER (multi-couleurs)
+// ================================================================
+
+model ProjectColor {
+  id          String    @id @default(cuid())
+  projectId   String
+  poste       Int       @default(1)      // P1, P2... P10
+  nomCouleur  String
+  typeCouleur ColorType @default(Pantone)
+  cibleLabL   Float     @default(50)
+  cibleLabA   Float     @default(0)
+  cibleLabB   Float     @default(0)
+  operateurId String?
+  statut      String    @default("brouillon")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  project     ColorProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  operateur   User?        @relation("ColorOperator", fields: [operateurId], references: [id])
+  trials      ColorTrial[]
+  productionControls ProductionControl[]
+
+  @@unique([projectId, poste])
+  @@index([projectId])
+  @@map("project_colors")
+}
+
+// ================================================================
+// 6. ESSAIS
+// ================================================================
+
+model ColorTrial {
+  id              String      @id @default(cuid())
+  projectId       String
+  colorId         String?
+  numeroVersion   Int         @default(1)
+  hypothese       String      @default("")
+  statut          TrialStatus @default(en_cours)
+  operateurId     String?
+  dateEssai       DateTime    @default(now())
+  commentaire     String      @default("")
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  project         ColorProject       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  color           ProjectColor?      @relation(fields: [colorId], references: [id])
+  operateur       User?              @relation(fields: [operateurId], references: [id])
+
+  // Enfants
+  spectroMeasurements SpectroMeasurement[]
+  densitoMeasurements DensitoMeasurement[]
+  formulations        Formulation[]
+  ovenData            OvenData[]
+  validations         Validation[]
+
+  @@index([projectId])
+  @@index([colorId])
+  @@index([statut])
+  @@map("color_trials")
+}
+
+// ================================================================
+// 7. MESURES SPECTROCOLORIMETRIQUES
+//    L*a*b* + C*h + densites CMJN + reflectances spectrales
+// ================================================================
+
+model SpectroMeasurement {
+  id            String         @id @default(cuid())
+  trialId       String
+  contexte      MeasureContext @default(essai)
+  lectureNumero Int            @default(1)
+
+  // Valeurs L*a*b*C*h
+  lValue        Float
+  aValue        Float
+  bValue        Float
+  cValue        Float?
+  hValue        Float?
+
+  // Densites CMJN equivalentes
+  densiteC      Float?   // Cyan
+  densiteM      Float?   // Magenta
+  densiteJ      Float?   // Jaune
+  densiteN      Float?   // Noir
+  densiteTd     Float?   // Ton direct (filtre specifique)
+
+  // Reflectances spectrales (%)
+  r400          Float?   // 400nm
+  r450          Float?   // 450nm
+  r500          Float?   // 500nm
+  r550          Float?   // 550nm
+  r600          Float?   // 600nm
+  r650          Float?   // 650nm
+  r700          Float?   // 700nm
+
+  operateurId   String?
+  commentaire   String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  trial         ColorTrial @relation(fields: [trialId], references: [id], onDelete: Cascade)
+  operateur     User?      @relation("SpectroOperator", fields: [operateurId], references: [id])
+
+  @@index([trialId])
+  @@index([contexte])
+  @@map("spectro_measurements")
+}
+
+// ================================================================
+// 8. MESURES DENSITOMETRIQUES
+// ================================================================
+
+model DensitoMeasurement {
+  id            String         @id @default(cuid())
+  trialId       String
+  contexte      MeasureContext @default(essai)
+  couleur       String         @default("ton_direct") // cyan/magenta/jaune/noir/ton_direct
+  densite       Float
+  trame25       Float?
+  trame50       Float?
+  trame75       Float?
+  trame80       Float?
+  trapping      Float?
+  contraste     Float?
+  operateurId   String?
+  commentaire   String         @default("")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  // Relations
+  trial         ColorTrial @relation(fields: [trialId], references: [id], onDelete: Cascade)
+  operateur     User?      @relation("DensitoOperator", fields: [operateurId], references: [id])
+
+  @@index([trialId])
+  @@map("densito_measurements")
+}
+
+// ================================================================
+// 9. FORMULATIONS (offset vs helio)
+// ================================================================
+
+model Formulation {
+  id               String   @id @default(cuid())
+  projectId        String
+  trialId          String
+  codeFormule      String
+  versionFormule   Int      @default(1)
+  coutTotal        Float    @default(0)
+  poidsTotal       Float    @default(0)
+  validee          Boolean  @default(false)
+  commentaire      String   @default("")
+  processType      String   @default("")
+
+  // Parametres HELIOGRAVURE
+  viscositeCoupe      Float?   // secondes
+  coupe               String?  // CF4, Zahn2, Zahn3
+  tauxDilution        Float?   // %
+  profondeurAlveole   Float?   // microns
+  typeVernis          String?  // NC, PU, NC_PU
+  tempsSechageHelio   Float?   // secondes
+
+  // Parametres OFFSET
+  tack                Float?
+  finesseBreoyage     Float?   // microns
+  hegman              Int?     // 0-8
+  sechageType         String?  // oxydation, UV, mixte, IR
+  resistanceFrottement String? // standard, haute, tres_haute
+  siccativite         String?  // rapide, normale, lente
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  project          ColorProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  trial            ColorTrial   @relation(fields: [trialId], references: [id], onDelete: Cascade)
+  items            FormulationItem[]
+
+  @@index([projectId])
+  @@index([trialId])
+  @@map("formulations")
+}
+
+model FormulationItem {
+  id              String  @id @default(cuid())
+  formulationId   String
+  composant       String  @default("")
+  codeComposant   String  @default("")
+  typeComposant   String  @default("pigment")
+  poids           Float   @default(0)
+  pourcentage     Float   @default(0)
+  lot             String  @default("")
+  fournisseur     String  @default("")
+  coutUnitaire    Float   @default(0)   // FCFA/kg
+  createdAt       DateTime @default(now())
+
+  // Relations
+  formulation     Formulation @relation(fields: [formulationId], references: [id], onDelete: Cascade)
+
+  @@index([formulationId])
+  @@map("formulation_items")
+}
+
+// ================================================================
+// 10. VALIDATIONS LABORATOIRE
+// ================================================================
+
+model Validation {
+  id                String             @id @default(cuid())
+  projectId         String
+  trialId           String?
+  statutValidation  ValidationDecision
+  valideParId       String
+  dateValidation    DateTime           @default(now())
+  commentaire       String             @default("")
+  createdAt         DateTime           @default(now())
+
+  // Relations
+  project           ColorProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  trial             ColorTrial?  @relation(fields: [trialId], references: [id])
+  validePar         User         @relation(fields: [valideParId], references: [id])
+
+  @@index([projectId])
+  @@map("validations")
+}
+
+// ================================================================
+// 11. CONTROLES PRODUCTION (multi-couleurs)
+// ================================================================
+
+model ProductionControl {
+  id            String         @id @default(cuid())
+  projectId     String
+  colorId       String?
+  etapeTirage   ProductionStep
+  dateControle  DateTime       @default(now())
+  operateurId   String
+  commentaire   String         @default("")
+  conforme      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+
+  // Relations
+  project       ColorProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  color         ProjectColor? @relation(fields: [colorId], references: [id])
+  operateur     User          @relation(fields: [operateurId], references: [id])
+
+  @@index([projectId])
+  @@index([colorId])
+  @@index([conforme])
+  @@map("production_controls")
+}
+
+// ================================================================
+// 12. OFFSET METAL — DONNEES SPECIFIQUES
+// ================================================================
+
+model MetalSupportData {
+  id           String  @id @default(cuid())
+  projectId    String  @unique
+  metalType    String  @default("ETP")   // ETP, TFS
+  epaisseur    Float   @default(0.18)
+  fournisseur  String  @default("")
+  lot          String  @default("")
+  finition     String  @default("Brillant")
+  fondType     String  @default("metal_nu") // metal_nu, laque_blanche, vernis_incolore
+  observations String  @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  project      ColorProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("metal_support_data")
+}
+
+model WhiteLacquerData {
+  id              String   @id @default(cuid())
+  projectId       String   @unique
+  presence        Boolean  @default(true)
+  reference       String   @default("")
+  fournisseur     String   @default("")
+  lot             String   @default("")
+  opacite         Float?
+  blancheur       Float?
+  brillance       Float?
+  nbCouches       Int      @default(1)
+  depot           Float?
+  applicationMode String   @default("rouleau")
+  commentaire     String   @default("")
+  mesureL         Float?
+  mesureA         Float?
+  mesureB         Float?
+  conforme        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  project         ColorProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("white_lacquer_data")
+}
+
+model OvenData {
+  id                  String   @id @default(cuid())
+  trialId             String
+  typeFour            String   @default("Tunnel gaz")
+  temperatureConsigne Float
+  temperatureReelle   Float?
+  tempsSejour         Float?   // minutes
+  vitesseLigne        Float?   // m/min
+  zone                String   @default("")
+  operateurId         String?
+  commentaire         String   @default("")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relations
+  trial               ColorTrial @relation(fields: [trialId], references: [id], onDelete: Cascade)
+  operateur           User?      @relation(fields: [operateurId], references: [id])
+
+  @@index([trialId])
+  @@map("oven_data")
+}
+
+// ================================================================
+// 13. PERMISSIONS & ROLES
+// ================================================================
+
+model Permission {
+  id          String   @id @default(cuid())
+  nom         String   @unique
+  description String   @default("")
+  module      String   @default("") // ex: projects, users, settings
+  action      String   @default("") // ex: create, read, update, delete, assign_permissions
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  userPermissions UserPermission[]
+
+  @@map("permissions")
+}
+
+model UserPermission {
+  id           String @id @default(cuid())
+  userId       String
+  permissionId String
+  grantedBy    String // ID de l'utilisateur qui a accordé cette permission
+  createdAt    DateTime @default(now())
+
+  // Relations
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  grantedByUser User @relation("PermissionGranter", fields: [grantedBy], references: [id])
+
+  @@unique([userId, permissionId])
+  @@map("user_permissions")
+}
+
+// ================================================================
+// 14. ANALYSES IA
+// ================================================================
+
+model AiAnalysis {
+  id          String   @id @default(cuid())
+  projectId   String?
+  question    String   @db.Text
+  response    String   @db.Text
+  model       String   @default("claude-sonnet-4-20250514")
+  tokens      Int      @default(0)
+  userId      String?
+  createdAt   DateTime @default(now())
+
+  @@index([projectId])
+  @@map("ai_analyses")
+}
