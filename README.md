@@ -28,29 +28,36 @@ git push -u origin main
 4. Vercel détectera automatiquement Next.js
 
 #### 3. Configuration des variables d'environnement
-Dans Vercel Dashboard → Settings → Environment Variables:
+Dans Vercel Dashboard → Settings → Environment Variables, ajoutez ces variables directement :
 
 ```bash
-# Base de données
-DATABASE_URL=postgresql://user:pass@host:port/db?schema=public
+# Base de données (OBLIGATOIRE)
+DATABASE_URL=postgresql://user:password@host:port/database?schema=public
 
 # Authentification (TRÈS IMPORTANT)
 NEXTAUTH_URL=https://your-domain.vercel.app
-NEXTAUTH_SECRET=votre-secret-32-caractères-minimum
+NEXTAUTH_SECRET=votre-secret-32-caractères-minimum-généré-avec-openssl
 
-# Agent IA (optionnel)
-ANTHROPIC_API_KEY=sk-ant-api03-...
-# OU
-N8N_WEBHOOK_URL=https://votre-n8n.com/webhook/...
-N8N_WEBHOOK_USER=votre-user
-N8N_WEBHOOK_PASSWORD=votre-pass
+# Agent IA (optionnel - choisissez l'une des deux options)
+# Option 1: Anthropic API
+ANTHROPIC_API_KEY=sk-ant-api03-votre-clé-ici
 
-# Application
+# Option 2: n8n webhook
+N8N_WEBHOOK_URL=https://votre-n8n-instance.com/webhook/votre-webhook-id
+N8N_WEBHOOK_USER=votre-username-n8n
+N8N_WEBHOOK_PASSWORD=votre-password-n8n
+
+# Application (valeurs suggérées)
 NEXT_PUBLIC_APP_NAME=ColorLab Pro
 NEXT_PUBLIC_APP_VERSION=1.0.0
 NEXT_PUBLIC_COMPANY=MULTIPRINT S.A.
 NEXT_PUBLIC_CURRENCY=FCFA
 ```
+
+**IMPORTANT**: 
+- Ne créez PAS de secrets Vercel séparés
+- Ajoutez directement les variables d'environnement comme ci-dessus
+- Le `NEXTAUTH_SECRET` doit être une chaîne de 32+ caractères (utilisez `openssl rand -base64 32`)
 
 #### 4. Base de données
 **Option A: Vercel Postgres (recommandé)**

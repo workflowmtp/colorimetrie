@@ -1,36 +1,21 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next",
-  "installCommand": "npm install",
-  "framework": "nextjs",
-  "regions": ["cdg1"],
-  "functions": {
-    "src/app/api/**/*.ts": {
-      "maxDuration": 30
-    }
-  },
-  "env": {
-    "NEXTAUTH_URL": "@nextauth_url",
-    "NEXTAUTH_SECRET": "@nextauth_secret",
-    "DATABASE_URL": "@database_url",
-    "ANTHROPIC_API_KEY": "@anthropic_api_key",
-    "N8N_WEBHOOK_URL": "@n8n_webhook_url",
-    "N8N_WEBHOOK_USER": "@n8n_webhook_user",
-    "N8N_WEBHOOK_PASSWORD": "@n8n_webhook_password",
-    "NEXT_PUBLIC_APP_NAME": "@next_public_app_name",
-    "NEXT_PUBLIC_APP_VERSION": "@next_public_app_version",
-    "NEXT_PUBLIC_COMPANY": "@next_public_company",
-    "NEXT_PUBLIC_CURRENCY": "@next_public_currency"
-  },
-  "build": {
-    "env": {
-      "PRISMA_GENERATE_DATAPROXY": "true"
-    }
-  },
-  "crons": [
-    {
-      "path": "/api/cron/backup",
-      "schedule": "0 2 * * *"
-    }
-  ]
+    "buildCommand": "npm run build",
+    "outputDirectory": ".next",
+    "installCommand": "npm install",
+    "framework": "nextjs",
+    "regions": ["cdg1"],
+    "functions": {
+        "src/app/api/**/*.ts": {
+            "maxDuration": 30
+        }
+    },
+    "build": {
+        "env": {
+            "PRISMA_GENERATE_DATAPROXY": "true"
+        }
+    },
+    "crons": [{
+        "path": "/api/cron/backup",
+        "schedule": "0 2 * * *"
+    }]
 }
