@@ -94,7 +94,7 @@ function SettingsSection({ title, count, editable, items, columns, labels, apiPa
   }
 
   return (
-    <Accordion id={`${type.toLowerCase()}-section`} title={`${title} (${count})`}>
+    <Accordion id={`${title.toLowerCase().replace(/\s+/g, '-')}-section`} title={`${title} (${count})`}>
       <div className="p-4">
         {editable && (
           <div className="mb-3">
