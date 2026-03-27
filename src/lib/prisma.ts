@@ -7,7 +7,9 @@ const DB_USER = process.env.DB_USER ?? 'postgres';
 const DB_PASSWORD = process.env.DB_PASSWORD ?? 'postgres';
 const DB_NAME = process.env.DB_NAME ?? 'colorlab_pro';
 
-const DATABASE_URL = `postgresql://${encodeURIComponent(DB_USER)}:${encodeURIComponent(DB_PASSWORD)}@${DB_HOST}:${DB_PORT}/${DB_NAME}?schema=public`;
+const DATABASE_URL =
+  process.env.DATABASE_URL ||
+  `postgresql://${encodeURIComponent(DB_USER)}:${encodeURIComponent(DB_PASSWORD)}@${DB_HOST}:${DB_PORT}/${DB_NAME}?schema=public`;
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;

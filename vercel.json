@@ -9,11 +9,6 @@
             "maxDuration": 30
         }
     },
-    "build": {
-        "env": {
-            "PRISMA_GENERATE_DATAPROXY": "true"
-        }
-    },
     "crons": [{
         "path": "/api/cron/backup",
         "schedule": "0 2 * * *"
