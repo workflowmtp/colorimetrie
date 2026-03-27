@@ -26,8 +26,7 @@ export async function GET() {
 
     // Test 2: Construire l'URL de connexion
     const dbPort = process.env.DB_PORT ?? '5432';
-    const dbPassword = process.env.DB_PASSWORD;
-    const constructedUrl = `postgresql://${encodeURIComponent(dbUser)}:${encodeURIComponent(dbPassword)}@${dbHost}:${dbPort}/${dbName}?schema=public`;
+    const dbPassword = process.env.DB_PASSWORD ?? '';
     
     // Test 3: Tenter la connexion avec timeout
     const connectionTest = await Promise.race([
