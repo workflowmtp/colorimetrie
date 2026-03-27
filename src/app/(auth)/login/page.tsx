@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -10,31 +10,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [dbChecking, setDbChecking] = useState(true);
-
-  useEffect(() => {
-    checkDatabaseConnection();
-  }, []);
-
-  async function checkDatabaseConnection() {
-    try {
-      const response = await fetch('/api/test-db');
-      const data = await response.json();
-      
-      if (!data.success) {
-        console.error('Database connection failed:', data);
-        // Rediriger vers la page d'erreur de base de données
-        router.push('/database-error');
-        return;
-      }
-    } catch (error) {
-      console.error('Error checking database:', error);
-      router.push('/database-error');
-      return;
-    } finally {
-      setDbChecking(false);
-    }
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -54,17 +29,6 @@ export default function LoginPage() {
     } else {
       router.push("/dashboard");
     }
-  }
-
-  if (dbChecking) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-400">Vérification de la connexion à la base de données...</p>
-        </div>
-      </div>
-    );
   }
 
   return (
