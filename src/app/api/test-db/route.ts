@@ -3,32 +3,57 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
-    // Test 1: Vérifier si DATABASE_URL est défini
-    const dbUrl = process.env.DATABASE_URL;
-    if (!dbUrl) {
+    // Test 1: Vérifier si les variables DB_* sont définies
+    const dbHost = process.env.DB_HOST;
+    const dbUser = process.env.DB_USER;
+    const dbName = process.env.DB_NAME;
+    
+    if (!dbHost || !dbUser || !dbName) {
       return NextResponse.json({ 
         success: false, 
-        error: 'DATABASE_URL is not defined in environment variables',
-        timestamp: new Date().toISOString()
+        error: 'Variables DB_* manquantes',
+        details: {
+          hasDBHost: !!dbHost,
+          hasDBUser: !!dbUser,
+          hasDBName: !!dbName,
+          hasDBPassword: !!process.env.DB_PASSWORD,
+          nodeEnv: process.env.NODE_ENV,
+          timestamp: new Date().toISOString()
+        },
+        solution: 'Configurez DB_HOST, DB_USER, DB_PASSWORD, DB_NAME dans Vercel Environment Variables'
       }, { status: 500 });
     }
 
-    // Test 2: Vérifier la connexion à la base
-    const userCount = await prisma.user.count();
+    // Test 2: Construire l'URL de connexion
+    const dbPort = process.env.DB_PORT ?? '5432';
+    const dbPassword = process.env.DB_PASSWORD;
+    const constructedUrl = `postgresql://${encodeURIComponent(dbUser)}:${encodeURIComponent(dbPassword)}@${dbHost}:${dbPort}/${dbName}?schema=public`;
     
-    // Test 3: Vérifier si les tables existent
+    // Test 3: Tenter la connexion avec timeout
+    const connectionTest = await Promise.race([
+      prisma.$connect(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Connection timeout')), 10000))
+    ]);
+    
+    // Test 4: Vérifier les tables
+    const userCount = await prisma.user.count();
     const tableCounts = {
       users: userCount,
-      projects: await prisma.colorProject.count(),
-      clients: await prisma.client.count(),
-      machines: await prisma.machine.count(),
+      projects: await prisma.colorProject.count().catch(() => 0),
+      clients: await prisma.client.count().catch(() => 0),
+      machines: await prisma.machine.count().catch(() => 0),
     };
+
+    await prisma.$disconnect();
 
     return NextResponse.json({ 
       success: true, 
       message: 'Database connection successful',
       database: {
-        url: dbUrl.replace(/\/\/.*@/, '//***:***@'), // Cacher les identifiants
+        host: dbHost,
+        database: dbName,
+        user: dbUser,
+        port: dbPort,
         tables: tableCounts,
         totalRecords: Object.values(tableCounts).reduce((a, b) => a + b, 0)
       },
@@ -37,14 +62,47 @@ export async function GET() {
   } catch (error) {
     console.error('Database test error:', error);
     
+    // Analyse détaillée de l'erreur
+    let errorType = 'unknown';
+    let solution = 'Contactez le support technique';
+    
+    if (error instanceof Error) {
+      const message = error.message.toLowerCase();
+      
+      if (message.includes('timeout') || message.includes('etimedout')) {
+        errorType = 'timeout';
+        solution = 'Vérifiez que la base est accessible et ajoutez les IPs Vercel à la whitelist';
+      } else if (message.includes('authentication') || message.includes('password') || message.includes('login')) {
+        errorType = 'auth';
+        solution = 'Vérifiez DB_USER et DB_PASSWORD dans les variables Vercel';
+      } else if (message.includes('connect') || message.includes('enotfound') || message.includes('connection refused')) {
+        errorType = 'connection';
+        solution = 'Vérifiez DB_HOST et DB_PORT, assurez-vous que la base est accessible depuis Vercel';
+      } else if (message.includes('database') && message.includes('does not exist')) {
+        errorType = 'database_not_found';
+        solution = 'Créez la base de données ou vérifiez DB_NAME';
+      }
+    }
+    
     return NextResponse.json({ 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown database error',
+      errorType,
       details: {
-        hasDatabaseUrl: !!process.env.DATABASE_URL,
+        hasDBHost: !!process.env.DB_HOST,
+        hasDBUser: !!process.env.DB_USER,
+        hasDBName: !!process.env.DB_NAME,
+        hasDBPassword: !!process.env.DB_PASSWORD,
         nodeEnv: process.env.NODE_ENV,
         timestamp: new Date().toISOString()
-      }
+      },
+      solution,
+      nextSteps: [
+        '1. Vérifiez les variables DB_* dans Vercel Environment Variables',
+        '2. Assurez-vous que la base est accessible depuis Internet',
+        '3. Ajoutez les IPs Vercel à la whitelist de votre base',
+        '4. Redéployez après correction'
+      ]
     }, { status: 500 });
   }
 }
