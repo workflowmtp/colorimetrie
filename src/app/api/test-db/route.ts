@@ -7,8 +7,11 @@ export async function GET() {
     const dbHost = process.env.DB_HOST;
     const dbUser = process.env.DB_USER;
     const dbName = process.env.DB_NAME;
+    const dbPass = process.env.DB_PASS ?? process.env.DB_PASSWORD;
+    const dbPort = process.env.DB_PORT ?? '5432';
+    const hasDatabaseUrl = !!process.env.DATABASE_URL;
     
-    if (!dbHost || !dbUser || !dbName) {
+    if (!hasDatabaseUrl && (!dbHost || !dbUser || !dbName)) {
       return NextResponse.json({ 
         success: false, 
         error: 'Variables DB_* manquantes',
@@ -16,17 +19,16 @@ export async function GET() {
           hasDBHost: !!dbHost,
           hasDBUser: !!dbUser,
           hasDBName: !!dbName,
-          hasDBPassword: !!process.env.DB_PASSWORD,
+          hasDBPassword: !!dbPass,
+          hasDBPort: !!process.env.DB_PORT,
+          hasDatabaseUrl,
+          rawDBPort: dbPort,
           nodeEnv: process.env.NODE_ENV,
           timestamp: new Date().toISOString()
         },
-        solution: 'Configurez DB_HOST, DB_USER, DB_PASSWORD, DB_NAME dans Vercel Environment Variables'
+        solution: 'Configurez DB_HOST, DB_USER, DB_PASS, DB_NAME dans Vercel Environment Variables'
       }, { status: 500 });
     }
-
-    // Test 2: Construire l'URL de connexion
-    const dbPort = process.env.DB_PORT ?? '5432';
-    const dbPassword = process.env.DB_PASSWORD ?? '';
     
     // Test 3: Tenter la connexion avec timeout
     const connectionTest = await Promise.race([
@@ -49,10 +51,11 @@ export async function GET() {
       success: true, 
       message: 'Database connection successful',
       database: {
-        host: dbHost,
-        database: dbName,
-        user: dbUser,
+        host: dbHost ?? 'from DATABASE_URL',
+        database: dbName ?? 'from DATABASE_URL',
+        user: dbUser ?? 'from DATABASE_URL',
         port: dbPort,
+        usingDatabaseUrl: hasDatabaseUrl,
         tables: tableCounts,
         totalRecords: Object.values(tableCounts).reduce((a, b) => a + b, 0)
       },
@@ -91,7 +94,11 @@ export async function GET() {
         hasDBHost: !!process.env.DB_HOST,
         hasDBUser: !!process.env.DB_USER,
         hasDBName: !!process.env.DB_NAME,
-        hasDBPassword: !!process.env.DB_PASSWORD,
+        hasDBPassword: !!(process.env.DB_PASS ?? process.env.DB_PASSWORD),
+        hasDBPort: !!process.env.DB_PORT,
+        hasDatabaseUrl: !!process.env.DATABASE_URL,
+        rawDBPort: process.env.DB_PORT ?? '(default 5432)',
+        rawDBHost: process.env.DB_HOST ?? '(not set)',
         nodeEnv: process.env.NODE_ENV,
         timestamp: new Date().toISOString()
       },

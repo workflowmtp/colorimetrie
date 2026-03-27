@@ -4,12 +4,15 @@ import { PrismaClient } from "@prisma/client";
 const DB_HOST = process.env.DB_HOST ?? 'localhost';
 const DB_PORT = process.env.DB_PORT ?? '5432';
 const DB_USER = process.env.DB_USER ?? 'postgres';
-const DB_PASSWORD = process.env.DB_PASSWORD ?? 'postgres';
+const DB_PASS = process.env.DB_PASS ?? process.env.DB_PASSWORD ?? 'postgres';
 const DB_NAME = process.env.DB_NAME ?? 'colorlab_pro';
+
+// Nettoyer le port (enlever espaces, caractères non numériques)
+const CLEAN_PORT = DB_PORT.trim().replace(/[^0-9]/g, '') || '5432';
 
 const DATABASE_URL =
   process.env.DATABASE_URL ||
-  `postgresql://${encodeURIComponent(DB_USER)}:${encodeURIComponent(DB_PASSWORD)}@${DB_HOST}:${DB_PORT}/${DB_NAME}?schema=public`;
+  `postgresql://${encodeURIComponent(DB_USER)}:${encodeURIComponent(DB_PASS)}@${DB_HOST}:${CLEAN_PORT}/${DB_NAME}?schema=public`;
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
