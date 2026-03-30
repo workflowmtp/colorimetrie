@@ -7,16 +7,16 @@
    ================================================================ */
 
 :root {
-    /* Light theme — high contrast */
-    --bg-main: #E8ECF1;
+    /* Light theme — strong contrast */
+    --bg-main: #D5DBE5;
     --bg-card: #FFFFFF;
-    --bg-elevated: #F3F6F9;
+    --bg-elevated: #EDF0F4;
     --bg-input: #FFFFFF;
-    --text-primary: #0F172A;
-    --text-secondary: #334155;
-    --text-muted: #64748B;
-    --border: #CBD5E1;
-    --border-light: #E2E8F0;
+    --text-primary: #0B1120;
+    --text-secondary: #1E293B;
+    --text-muted: #475569;
+    --border: #B0BECE;
+    --border-light: #CBD5E1;
 }
 
 .dark {
@@ -135,13 +135,13 @@ body {
         @apply opacity-40 cursor-not-allowed;
     }
     .btn-primary {
-        @apply bg-accent-blue text-white hover:bg-blue-600;
+        @apply bg-accent-blue text-white hover: bg-blue-600;
     }
     .btn-success {
-        @apply bg-accent-green text-white hover:bg-emerald-600;
+        @apply bg-accent-green text-white hover: bg-emerald-600;
     }
     .btn-danger {
-        @apply bg-accent-red text-white hover:bg-red-600;
+        @apply bg-accent-red text-white hover: bg-red-600;
     }
     .btn-warning {
         @apply text-accent-orange;
@@ -149,7 +149,7 @@ body {
         background: transparent;
     }
     .btn-ghost {
-        @apply hover:bg-gray-100 dark:hover:bg-slate-700;
+        @apply hover: bg-gray-100 dark: hover: bg-slate-700;
         color: var(--text-secondary);
         background: transparent;
     }
