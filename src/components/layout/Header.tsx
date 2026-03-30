@@ -51,12 +51,10 @@ export default function Header() {
 
   return (
     <header
-      className="h-16 border-b flex items-center justify-between px-6 sticky top-0 z-30"
+      className="h-16 border-b flex items-center justify-between px-4 md:px-6 sticky top-0 z-30"
       style={{
         background: "var(--bg-card)",
         borderColor: "var(--border)",
-        marginLeft: collapsed ? 60 : 240,
-        transition: "margin-left 0.3s",
       }}
     >
       {/* Left: Breadcrumb */}

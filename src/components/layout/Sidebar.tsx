@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAppStore } from "@/stores/app-store";
@@ -42,39 +43,53 @@ export default function Sidebar() {
   const pathname = usePathname();
   const collapsed = useAppStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
-  const { can, user, role } = useAuth();
+  const { can } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  return (
-    <aside
-      className={`fixed top-0 left-0 h-screen z-40 flex flex-col transition-all duration-300 ${
-        collapsed ? "w-[60px]" : "w-[240px]"
-      }`}
-      style={{ background: "#0C1B2E" }}
-    >
+  // Fermer le menu mobile quand on navigue
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  // Fermer le menu mobile si on redimensionne vers desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) setMobileOpen(false);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const sidebarContent = (
+    <>
       {/* Brand */}
       <div className="flex items-center gap-3 px-4 h-16 border-b border-white/10 flex-shrink-0">
         <div className="w-8 h-8 rounded-lg bg-accent-blue/30 flex items-center justify-center text-lg flex-shrink-0">
           🎨
         </div>
-        {!collapsed && (
-          <div className="overflow-hidden">
+        {(!collapsed || mobileOpen) && (
+          <div className="overflow-hidden flex-1">
             <div className="text-white font-bold text-sm leading-tight">ColorLab Pro</div>
             <div className="text-[10px] text-slate-500 leading-tight">MULTIPRINT S.A.</div>
           </div>
         )}
+        {/* Bouton fermer mobile */}
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="md:hidden ml-auto text-slate-400 hover:text-white p-1"
+        >
+          ✕
+        </button>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-2 space-y-0.5">
         {NAV_ITEMS.map((item) => {
-          // Separator
           if (item.separator) {
             return (
               <div key={item.id} className="my-2 mx-3 border-t border-white/5" />
             );
           }
-
-          // Permission check
           if (item.perm && !can(item.perm)) return null;
 
           const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
@@ -88,25 +103,66 @@ export default function Sidebar() {
                   ? "bg-white/10 text-white font-semibold"
                   : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
               }`}
-              title={collapsed ? item.label : undefined}
+              title={collapsed && !mobileOpen ? item.label : undefined}
             >
               <span className="text-base flex-shrink-0 w-5 text-center">{item.icon}</span>
-              {!collapsed && <span className="truncate">{item.label}</span>}
+              {(!collapsed || mobileOpen) && <span className="truncate">{item.label}</span>}
             </Link>
           );
         })}
       </nav>
 
-      {/* Collapse toggle */}
+      {/* Collapse toggle (desktop uniquement) */}
       <button
         onClick={toggleSidebar}
-        className="flex items-center justify-center h-10 border-t border-white/10 text-slate-500 hover:text-white transition-colors"
+        className="hidden md:flex items-center justify-center h-10 border-t border-white/10 text-slate-500 hover:text-white transition-colors"
         title={collapsed ? "Ouvrir" : "Reduire"}
       >
         <span className={`text-xs transition-transform ${collapsed ? "rotate-180" : ""}`}>
           ◀
         </span>
       </button>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Bouton hamburger mobile */}
+      <button
+        onClick={() => setMobileOpen(true)}
+        className="md:hidden fixed top-4 left-4 z-50 w-10 h-10 rounded-lg flex items-center justify-center text-white"
+        style={{ background: "#0C1B2E" }}
+      >
+        <span className="text-lg">☰</span>
+      </button>
+
+      {/* Overlay mobile */}
+      {mobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-40 bg-black/50"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar mobile */}
+      <aside
+        className={`md:hidden fixed top-0 left-0 h-screen z-50 flex flex-col w-[260px] transition-transform duration-300 ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+        style={{ background: "#0C1B2E" }}
+      >
+        {sidebarContent}
+      </aside>
+
+      {/* Sidebar desktop */}
+      <aside
+        className={`hidden md:flex fixed top-0 left-0 h-screen z-40 flex-col transition-all duration-300 ${
+          collapsed ? "w-[60px]" : "w-[240px]"
+        }`}
+        style={{ background: "#0C1B2E" }}
+      >
+        {sidebarContent}
+      </aside>
+    </>
   );
 }
