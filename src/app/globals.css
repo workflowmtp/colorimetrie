@@ -135,13 +135,13 @@ body {
         @apply opacity-40 cursor-not-allowed;
     }
     .btn-primary {
-        @apply bg-accent-blue text-white hover: bg-blue-600;
+        @apply bg-accent-blue text-white hover:bg-blue-600;
     }
     .btn-success {
-        @apply bg-accent-green text-white hover: bg-emerald-600;
+        @apply bg-accent-green text-white hover:bg-emerald-600;
     }
     .btn-danger {
-        @apply bg-accent-red text-white hover: bg-red-600;
+        @apply bg-accent-red text-white hover:bg-red-600;
     }
     .btn-warning {
         @apply text-accent-orange;
@@ -149,7 +149,7 @@ body {
         background: transparent;
     }
     .btn-ghost {
-        @apply hover: bg-gray-100 dark: hover: bg-slate-700;
+        @apply hover:bg-gray-100 dark:hover:bg-slate-700;
         color: var(--text-secondary);
         background: transparent;
     }
