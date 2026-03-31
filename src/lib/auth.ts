@@ -2,6 +2,7 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import prisma from "@/lib/prisma";
+import { getRolePermissionsFromDB } from "@/lib/permissions";
 import type { Role } from "@prisma/client";
 
 declare module "next-auth" {
@@ -11,6 +12,7 @@ declare module "next-auth" {
       nom: string;
       email: string;
       role: Role;
+      permissions: string[];
     };
   }
   interface User {
@@ -18,6 +20,7 @@ declare module "next-auth" {
     nom: string;
     email: string;
     role: Role;
+    permissions: string[];
   }
 }
 
@@ -27,6 +30,7 @@ declare module "next-auth/jwt" {
     nom: string;
     email: string;
     role: Role;
+    permissions: string[];
   }
 }
 
@@ -50,11 +54,15 @@ export const authOptions: NextAuthOptions = {
         const valid = await compare(credentials.password, user.passwordHash);
         if (!valid) return null;
 
+        // Charger les permissions dynamiques depuis la DB
+        const permissions = await getRolePermissionsFromDB(user.role);
+
         return {
           id: user.id,
           nom: user.nom,
           email: user.email,
           role: user.role,
+          permissions,
         };
       },
     }),
@@ -66,6 +74,7 @@ export const authOptions: NextAuthOptions = {
         token.nom = user.nom;
         token.email = user.email;
         token.role = user.role;
+        token.permissions = user.permissions;
       }
       return token;
     },
@@ -75,6 +84,7 @@ export const authOptions: NextAuthOptions = {
         nom: token.nom,
         email: token.email,
         role: token.role,
+        permissions: token.permissions ?? [],
       };
       return session;
     },

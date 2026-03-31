@@ -37,6 +37,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "sep5",         label: "",                   icon: "",   href: "",             separator: true },
   { id: "settings",     label: "Parametres",         icon: "⚙️", href: "/settings",     perm: "settings.read" },
   { id: "users",        label: "Utilisateurs",       icon: "👥", href: "/users",        perm: "users.manage" },
+  { id: "roles",        label: "Roles & Permissions",icon: "🔐", href: "/roles",        perm: "users.assign_permissions" },
 ];
 
 export default function Sidebar() {

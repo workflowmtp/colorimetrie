@@ -655,8 +655,23 @@ model Permission {
 
   // Relations
   userPermissions UserPermission[]
+  rolePermissions RolePermission[]
 
   @@map("permissions")
+}
+
+model RolePermission {
+  id           String   @id @default(cuid())
+  role         Role
+  permissionId String
+  createdAt    DateTime @default(now())
+
+  // Relations
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([role, permissionId])
+  @@index([role])
+  @@map("role_permissions")
 }
 
 model UserPermission {
