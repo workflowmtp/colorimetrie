@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { hasBasePermission } from "@/lib/permissions";
+import { hasSessionPermission } from "@/lib/permissions";
 import type { Role } from "@prisma/client";
 
 // GET /api/metal?projectId=xxx
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
-  if (!hasBasePermission(session.user.role as Role, "metal.edit")) {
+  if (!hasSessionPermission(session, "metal.edit")) {
     return NextResponse.json({ error: "Permission refusee" }, { status: 403 });
   }
 
@@ -62,7 +62,7 @@ export async function PUT(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
-  if (!hasBasePermission(session.user.role as Role, "metal.edit")) {
+  if (!hasSessionPermission(session, "metal.edit")) {
     return NextResponse.json({ error: "Permission refusee" }, { status: 403 });
   }
 

@@ -168,6 +168,22 @@ export function hasBasePermission(role: Role, permission: Permission): boolean {
 }
 
 /**
+ * Verifie une permission depuis la session NextAuth (API routes)
+ * Utilise les permissions dynamiques du JWT, fallback sur statique
+ */
+export function hasSessionPermission(
+  session: { user: { role: string; permissions?: string[] } } | null,
+  permission: Permission
+): boolean {
+  if (!session?.user) return false;
+  const { permissions: perms, role } = session.user;
+  if (perms && perms.length > 0) {
+    return perms.includes(permission);
+  }
+  return hasBasePermission(role as Role, permission);
+}
+
+/**
  * Verifie une permission a partir d'une liste de permissions (cote client)
  * Utilise par useAuth avec les permissions chargees dans le JWT
  */

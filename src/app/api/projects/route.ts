@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { hasBasePermission } from "@/lib/permissions";
+import { hasSessionPermission } from "@/lib/permissions";
 import { generateDossierCode } from "@/lib/utils";
 import type { Role, ProcessType, SupportType, Priority, ColorType } from "@prisma/client";
 
@@ -10,7 +10,7 @@ import type { Role, ProcessType, SupportType, Priority, ColorType } from "@prism
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
-  if (!hasBasePermission(session.user.role as Role, "project.read")) {
+  if (!hasSessionPermission(session, "project.read")) {
     return NextResponse.json({ error: "Permission refusee" }, { status: 403 });
   }
 
@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
-  if (!hasBasePermission(session.user.role as Role, "project.create")) {
+  if (!hasSessionPermission(session, "project.create")) {
     return NextResponse.json({ error: "Permission refusee" }, { status: 403 });
   }
 

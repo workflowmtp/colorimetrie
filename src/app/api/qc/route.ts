@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { hasBasePermission } from "@/lib/permissions";
+import { hasSessionPermission } from "@/lib/permissions";
 import type { Role } from "@prisma/client";
 
 // GET /api/qc — QC overview data for all validated projects
 export async function GET(_req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
-  if (!hasBasePermission(session.user.role as Role, "qc.read")) {
+  if (!hasSessionPermission(session, "qc.read")) {
     return NextResponse.json({ error: "Permission refusee" }, { status: 403 });
   }
 
@@ -39,7 +39,7 @@ export async function GET(_req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
-  if (!hasBasePermission(session.user.role as Role, "qc.validate")) {
+  if (!hasSessionPermission(session, "qc.validate")) {
     return NextResponse.json({ error: "Permission refusee" }, { status: 403 });
   }
 
